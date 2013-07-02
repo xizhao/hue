@@ -97,9 +97,27 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
   </div>
 
   <div id="editor" class="row-fluid mainSection hide">
+  <%actionbar:render>
+      <%def name="search()">
+        <h3 style="float:left; margin-top:2px; line-height: 24px"><span id="currentScriptName" data-placement="right"></span></h3>
+      </%def>
+
+      <%def name="actions()">
+        <button class="btn btn-primary fileToolbarBtn disable-feedback" title="${_('Run this script')}" data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()"><i class="icon-play"></i> ${_('Run')}</button>
+        <button class="btn btn-inverse disable-feedback fileToolbarBtn" title="${_('Stop this script')}" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="icon-stop"></i> ${_('Stop')}</button>
+      </%def>
+
+      <%def name="creation()">
+        <button class="btn fileToolbarBtn" title="${_('Save this script')}" data-bind="click: saveScript"><i class="icon-save"></i> ${_('Save')}</button>
+        <button class="btn fileToolbarBtn" title="${_('Copy this script')}" data-bind="visible: currentScript().id() != -1, click: copyScript"><i class="icon-copy"></i> ${_('Copy')}</button>
+        <button class="btn fileToolbarBtn" title="${_('Delete this script')}" data-bind="visible: currentScript().id() != -1, click: confirmDeleteScript"><i class="icon-trash"></i> ${_('Delete')}</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="btn fileToolbarBtn" title="${_('Create a new script')}" data-bind="click: confirmNewScript"><i class="icon-plus-sign"></i> ${_('New script')}</button>
+      </%def>
+    </%actionbar:render>
+    <div class="row-fluid">
     <div class="span2">
       <div class="well sidebar-nav">
-        <form id="advancedSettingsForm" method="POST" class="form form-horizontal noPadding">
           <ul class="nav nav-list">
             <li class="nav-header">${_('Editor')}</li>
             <li data-bind="click: editScript" class="active" data-section="edit">
@@ -108,40 +126,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
             <li data-bind="click: editScriptProperties" data-section="properties">
               <a href="#"><i class="icon-reorder"></i> ${ _('Properties') }</a>
             </li>
-            <li data-bind="click: saveScript">
-              <a href="#" title="${ _('Save the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-save"></i> ${ _('Save') }
-              </a>
-            </li>
-            <li data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()">
-              <a href="#" title="${ _('Run the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-play"></i> ${ _('Run') }
-              </a>
-            </li>
-            <li data-bind="click: showStopModal, visible: currentScript().isRunning()">
-              <a href="#" title="${ _('Run the script') }" rel="tooltip" data-placement="right" class="disabled">
-                <i class="icon-ban-circle"></i> ${ _('Stop') }
-              </a>
-            </li>
-            ##<li class="nav-header">${_('UDF')}</li>
-            ##<li><a href="#createDataset">${ _('Python') }</a></li>
-            ##<li><a href="#createDataset">${ _('Ruby') }</a></li>
-            <li class="nav-header">${_('Actions')}</li>
-            <li data-bind="click: confirmNewScript">
-              <a href="#" title="${ _('New script') }" rel="tooltip" data-placement="right">
-                <i class="icon-plus-sign"></i> ${ _('New script') }
-              </a>
-            </li>
-            <li data-bind="visible: currentScript().id() != -1, click: copyScript">
-              <a href="#" title="${ _('Copy the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-copy"></i> ${ _('Copy') }
-              </a>
-            </li>
-            <li data-bind="visible: currentScript().id() != -1, click: confirmDeleteScript">
-              <a href="#" title="${ _('Delete the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-trash"></i> ${ _('Delete') }
-              </a>
-            </li>
+
             <li class="nav-header">${_('Logs')}</li>
             <li data-bind="click: showScriptLogs" data-section="logs">
               <a href="#" title="${ _('Show Logs') }" rel="tooltip" data-placement="right">
@@ -159,7 +144,6 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
             </div>
             </li>
           </ul>
-        </form>
       </div>
     </div>
 
@@ -169,37 +153,33 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       </div>
 
       <div id="edit" class="section">
-        <div class="alert alert-info"><h3>${ _('Edit') } '<span data-bind="text: currentScript().name"></span>'</h3></div>
         <form id="queryForm">
           <textarea id="scriptEditor" data-bind="text:currentScript().script"></textarea>
         </form>
       </div>
 
       <div id="properties" class="section hide">
-        <div class="alert alert-info"><h3>${ _('Edit properties for') } '<span data-bind="text: currentScript().name"></span>'</h3></div>
-         <form class="form-inline" style="padding-left: 10px">
-          <label>
-            ${ _('Script name') } &nbsp;
-            <input type="text" id="scriptName" class="input-xlarge" data-bind="value: currentScript().name" />
-          </label>
-
-          <br/>
-          <br/>
-
-          <label>${ _('Parameters') } &nbsp; <i id="parameters-dyk" class="icon-question-sign"></i>
-            <div id="parameters-dyk-content" class="hide">
-              <ul style="text-align: left;">
-                <li>input /user/data</li>
-                <li>-param input=/user/data</li>
-                <li>-optimizer_off SplitFilter</li>
-                <li>-verbose</li>
-              </ul>
-            </div>
-            <button class="btn" data-bind="click: currentScript().addParameter, visible: currentScript().parameters().length == 0" style="margin-left: 4px">
-              <i class="icon-plus"></i> ${ _('Add') }
-            </button>
-          </label>
-          <div>
+        <form class="form-inline" style="padding-left: 10px">
+          <h4>${ _('Parameters') } &nbsp; <i id="parameters-dyk" class="icon-question-sign"></i></h4>
+          <div id="parameters-dyk-content" class="hide">
+            <ul style="text-align: left;">
+              <li>input /user/data</li>
+              <li>-param input=/user/data</li>
+              <li>-optimizer_off SplitFilter</li>
+              <li>-verbose</li>
+            </ul>
+          </div>
+          <div class="parameterTableCnt">
+            <table class="parameterTable" data-bind="visible: currentScript().parameters().length == 0">
+              <tr>
+                <td>
+                  ${ _('There are currently no defined parameters.') }
+                  <button class="btn" data-bind="click: currentScript().addParameter" style="margin-left: 4px">
+                    <i class="icon-plus"></i> ${ _('Add') }
+                  </button>
+                </td>
+              </tr>
+            </table>
             <table data-bind="css: {'parameterTable': currentScript().parameters().length > 0}">
               <thead data-bind="visible: currentScript().parameters().length > 0">
                 <tr>
@@ -212,8 +192,10 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                 <tr>
                   <td><input type="text" data-bind="value: name" class="input-xlarge" /></td>
                   <td>
-                    <input type="text" data-bind="value: value" class="input-xxlarge" />
-                    <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
+                    <div class="input-append">
+                      <input type="text" data-bind="value: value" class="input-xxlarge" />
+                      <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
+                    </div>
                   </td>
                   <td><button data-bind="click: viewModel.currentScript().removeParameter" class="btn"><i class="icon-trash"></i> ${ _('Remove') }</button></td>
                 </tr>
@@ -229,19 +211,24 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           </div>
 
           <br/>
-
-          <label>${ _('Hadoop properties') } &nbsp; <i id="properties-dyk" class="icon-question-sign"></i>
-            <div id="properties-dyk-content" class="hide">
-              <ul style="text-align: left; word-wrap:break-word">
-                <li>mapred.job.queue.name production</li>
-                <li>mapred.map.tasks.speculative.execution false</li>
-              </ul>
-            </div>
-            <button class="btn" data-bind="click: currentScript().addHadoopProperties, visible: currentScript().hadoopProperties().length == 0" style="margin-left: 4px">
-              <i class="icon-plus"></i> ${ _('Add') }
-            </button>
-          </label>
-          <div>
+          <h4>${ _('Hadoop properties') } &nbsp; <i id="properties-dyk" class="icon-question-sign"></i></h4>
+          <div id="properties-dyk-content" class="hide">
+            <ul style="text-align: left; word-wrap:break-word">
+              <li>mapred.job.queue.name production</li>
+              <li>mapred.map.tasks.speculative.execution false</li>
+            </ul>
+          </div>
+          <div class="parameterTableCnt">
+            <table class="parameterTable" data-bind="visible: currentScript().hadoopProperties().length == 0">
+              <tr>
+                <td>
+                  ${ _('There are currently no defined Hadoop properties.') }
+                  <button class="btn" data-bind="click: currentScript().addHadoopProperties" style="margin-left: 4px">
+                    <i class="icon-plus"></i> ${ _('Add') }
+                  </button>
+                </td>
+              </tr>
+            </table>
             <table data-bind="css: {'parameterTable': currentScript().hadoopProperties().length > 0}">
               <thead data-bind="visible: currentScript().hadoopProperties().length > 0">
                 <tr>
@@ -254,8 +241,10 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                 <tr>
                   <td><input type="text" data-bind="value: name" class="input-xlarge" /></td>
                   <td>
-                    <input type="text" data-bind="value: value" class="input-xxlarge" />
-                    <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
+                    <div class="input-append">
+                      <input type="text" data-bind="value: value" class="input-xxlarge" />
+                      <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
+                    </div>
                   </td>
                   <td><button data-bind="click: viewModel.currentScript().removeHadoopProperties" class="btn"><i class="icon-trash"></i> ${ _('Remove') }</button></td>
                 </tr>
@@ -272,17 +261,23 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
           <br/>
 
-          <label>${ _('Resources') } &nbsp; <i id="resources-dyk" class="icon-question-sign"></i>
-            <div id="resources-dyk-content" class="hide">
-              <ul style="text-align: left;">
-                <li>${ _("Path to a HDFS file or zip file to add to the workspace of the running script") }</li>
-              </ul>
-            </div>
-            <button class="btn" data-bind="click: currentScript().addResource, visible: currentScript().resources().length == 0" style="margin-left: 4px">
-              <i class="icon-plus"></i> ${ _('Add') }
-            </button>
-          </label>
-          <div>
+          <h4>${ _('Resources') } &nbsp; <i id="resources-dyk" class="icon-question-sign"></i></h4>
+          <div id="resources-dyk-content" class="hide">
+            <ul style="text-align: left;">
+              <li>${ _("Path to a HDFS file or zip file to add to the workspace of the running script") }</li>
+            </ul>
+          </div>
+          <div class="parameterTableCnt">
+            <table class="parameterTable" data-bind="visible: currentScript().resources().length == 0">
+              <tr>
+                <td>
+                  ${ _('There are currently no defined resources.') }
+                  <button class="btn" data-bind="click: currentScript().addResource" style="margin-left: 4px">
+                    <i class="icon-plus"></i> ${ _('Add') }
+                  </button>
+                </td>
+              </tr>
+            </table>
             <table data-bind="css: {'parameterTable': currentScript().resources().length > 0}">
               <thead data-bind="visible: currentScript().resources().length > 0">
                 <tr>
@@ -325,7 +320,6 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       </div>
 
       <div id="logs" class="section hide">
-          <div class="alert alert-info"><h3>${ _('Logs for') } '<span data-bind="text: currentScript().name"></span>'</h3></div>
           <div data-bind="template: {name: 'logTemplate', foreach: currentScript().actions}"></div>
           <script id="logTemplate" type="text/html">
             <div data-bind="css:{'alert-modified': name != '', 'alert': name != '', 'alert-success': status == 'SUCCEEDED' || status == 'OK', 'alert-error': status != 'RUNNING' && status != 'SUCCEEDED' && status != 'OK' && status != 'PREP' && status != 'SUSPENDED'}">
@@ -338,11 +332,12 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
               </div>
             </div>
           </script>
-          <pre id="withoutLogs" class="hide">${ _('No available logs.') } <img src="/static/art/spinner.gif"/></pre>
+          <pre id="withoutLogs">${ _('No available logs.') } <img src="/static/art/spinner.gif"/></pre>
           <pre id="withLogs" class="hide scroll"></pre>
         </div>
 
       </div>
+    </div>
   </div>
 
   <div id="dashboard" class="row-fluid mainSection hide">
@@ -553,6 +548,9 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 <script src="/static/js/Source/jHue/codemirror-show-hint.js"></script>
 <script src="/static/js/Source/jHue/codemirror-pig-hint.js"></script>
 <link rel="stylesheet" href="/static/ext/css/codemirror-show-hint.css">
+<link href="/static/ext/css/bootstrap-editable.css" rel="stylesheet">
+<script src="/static/ext/js/bootstrap-editable.min.js"></script>
+<script src="/static/ext/js/knockout.x-editable.js"></script>
 
 <style>
   .fileChooserBtn {
@@ -588,6 +586,18 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
   $(document).ready(function () {
     viewModel.updateScripts();
+
+    $("#currentScriptName").editable({
+      emptytext: ' '
+    }).on("save", function (e, obj) {
+          viewModel.currentScript().name(obj.newValue);
+        });
+
+    $(document).on("setEditable", function () {
+      $("#currentScriptName").editable("setValue", viewModel.currentScript().name());
+    });
+
+    $(document).trigger("setEditable");
 
     var USER_HOME = "/user/${ user }/";
 
@@ -820,7 +830,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
     $(window).on("resize", function () {
       window.clearTimeout(_resizeTimeout);
       _resizeTimeout = window.setTimeout(function () {
-        codeMirror.setSize("100%", $(window).height() - 250);
+        codeMirror.setSize("100%", $(window).height() - 190);
       }, 100);
     });
 
@@ -900,7 +910,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
     function showMainSection(mainSection, includeGA) {
       window.setTimeout(function () {
         codeMirror.refresh();
-        codeMirror.setSize("100%", $(window).height() - 250);
+        codeMirror.setSize("100%", $(window).height() - 190);
       }, 100);
 
       if ($("#" + mainSection).is(":hidden")) {

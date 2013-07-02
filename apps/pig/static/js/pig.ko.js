@@ -58,9 +58,11 @@ var PigScript = function (pigScript) {
   });
   self.addParameter = function () {
     self.parameters.push(new PigParameter({name: '', value: ''}));
+    self.updateParentModel();
   };
   self.removeParameter = function () {
     self.parameters.remove(this);
+    self.updateParentModel();
   };
   self.getParameters = function () {
     var params = {};
@@ -83,9 +85,11 @@ var PigScript = function (pigScript) {
   });
   self.addHadoopProperties = function () {
     self.hadoopProperties.push(new HadoopProperty({name: '', value: ''}));
+    self.updateParentModel();
   };
   self.removeHadoopProperties = function () {
     self.hadoopProperties.remove(this);
+    self.updateParentModel();
   };
 
   self.resources = ko.observableArray([]);
@@ -94,10 +98,23 @@ var PigScript = function (pigScript) {
   });
   self.addResource = function () {
     self.resources.push(new Resource({type: 'file', value: ''}));
+    self.updateParentModel();
   };
   self.removeResource = function () {
     self.resources.remove(this);
+    self.updateParentModel();
   };
+
+  self.parentModel = pigScript.parentModel;
+  self.updateParentModel = function () {
+    if (self.parentModel != undefined && self.parentModel != null) {
+      self.parentModel.isDirty(true);
+    }
+  }
+
+  self.name.subscribe(function (name) {
+    self.updateParentModel();
+  });
 }
 
 var Workflow = function (wf) {
@@ -158,12 +175,17 @@ var PigViewModel = function (props) {
     script: self.LABELS.NEW_SCRIPT_CONTENT,
     parameters: self.LABELS.NEW_SCRIPT_PARAMETERS,
     resources: self.LABELS.NEW_SCRIPT_RESOURCES,
-    hadoopProperties: self.LABELS.NEW_SCRIPT_HADOOP_PROPERTIES
+    hadoopProperties: self.LABELS.NEW_SCRIPT_HADOOP_PROPERTIES,
+    parentModel: self
   };
 
   self.currentScript = ko.observable(new PigScript(_defaultScript));
   self.loadingScript = null;
   self.currentDeleteType = ko.observable("");
+
+  self.currentScript.subscribe(function (newValue) {
+    $(document).trigger("setEditable");
+  });
 
   self.selectedScripts = ko.computed(function () {
     return ko.utils.arrayFilter(self.scripts(), function (script) {
@@ -234,6 +256,7 @@ var PigViewModel = function (props) {
     $("#confirmModal").modal("hide");
     $(document).trigger("loadEditor");
     $(document).trigger("showEditor");
+    $(document).trigger("clearLogs");
   };
 
   self.editScript = function (script) {
@@ -326,6 +349,7 @@ var PigViewModel = function (props) {
   self.updateScripts = function () {
     $.getJSON(self.LIST_SCRIPTS, function (data) {
       self.scripts(ko.utils.arrayMap(data, function (script) {
+        script.parentModel = self;
         return new PigScript(script);
       }));
       self.filteredScripts(self.scripts());
@@ -501,6 +525,7 @@ var PigViewModel = function (props) {
           id: script.id()
         },
         function (data) {
+          data.parentModel = self;
           self.currentScript(new PigScript(data));
           $(document).trigger("loadEditor");
           self.updateScripts();
