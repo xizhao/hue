@@ -1,3 +1,7 @@
 .row-selectable tr {
   cursor: pointer;
 }
+
+.dataTables_wrapper .row {
+  margin: 0px;
+}

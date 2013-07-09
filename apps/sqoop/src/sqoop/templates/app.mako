@@ -22,17 +22,6 @@
 
 ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
 
-<div class="subnav subnav-fixed">
-  <div class="container-fluid">
-    <ul class="nav nav nav-pills">
-      <li><a href="#jobs">${ _('Editor') }</a></li>
-      <li><a href="#history">${ _('History') }</a></li>
-      <li><a href="#server">${ _('Server') }</a></li>
-    </ul>
-  </div>
-</div>
-
-
 <div class="container-fluid">
   <div id="sqoop-error" class="row-fluid mainSection hide">
     <h2>${_('Sqoop error')}</h2>
@@ -54,7 +43,6 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
 
         <%def name="creation()">
           <a class="btn fileToolbarBtn" title="${_('Create a new job')}" href="#job/new"><i class="icon-plus-sign"></i> ${_('New job')}</a>
-          <a class="btn fileToolbarBtn" title="${_('Create a new job')}" href="#job/edit"><i class="icon-sort"></i> ${_('Edit job')}</a>
         </%def>
       </%actionbar:render>
       <table class="table table-striped table-condensed tablescroller-disable row-selectable">
@@ -69,7 +57,7 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
             <th width="20%">${_('Updated')}</th>
           </tr>
         </thead>
-        <tbody data-bind="foreach: filteredJobs">
+        <tbody data-bind="foreach: {data: filteredJobs, afterRender: recreateDatatableAfterJobsRender}">
           <tr data-bind="">
             <td data-row-selector-exclude="true">
               <span data-bind="css: {'hueCheckbox': true, 'center': true, 'icon-ok': selected}">&nbsp;</span>
@@ -108,20 +96,10 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
                                  'value': $root.job().type"
                       class="span12"></select>
             </li>
-            <li class="nav-header">${_('Connector')}</li>
-            <li>
-              <select name="connector"
-                      data-bind="'options': $root.connectors,
-                                 'optionsText': function(item) {
-                                   return item.name();
-                                 },
-                                 'value': $root.connector"
-                      class="span12"></select>
-            </li>
             <li class="nav-header">${_('Connection')}</li>
             <li>
               <select name="connection"
-                      data-bind="'options': $root.connections,
+                      data-bind="'options': $root.persistedConnections,
                                  'optionsText': function(item) {
                                    return item.name();
                                  },
@@ -130,12 +108,17 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
             </li>
             <li>
               <a href="#connection/new">
-                <i class="icon-plus"></i> ${ _('New connection') }
+                <i class="icon-pencil"></i> ${ _('New connection') }
               </a>
             </li>
             <li data-bind="visible: $root.connections().length > 0">
               <a href="#connection/edit">
                 <i class="icon-reorder"></i> ${ _('Edit connection') }
+              </a>
+            </li>
+            <li data-bind="visible: $root.connections().length > 0">
+              <a href="#connection/delete">
+                <i class="icon-trash"></i> ${ _('Delete connection') }
               </a>
             </li>
             <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Actions')}</li>
@@ -228,47 +211,6 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
       </div>
     </div>
   </div>
-
-  <div id="history" class="row-fluid mainSection hide">
-    <table class="table table-striped table-condensed tablescroller-disable row-selectable">
-      <thead>
-        <tr data-bind="visible: submissions().length > 0">
-          <th width="1%"></th>
-          <th width="5%">${_('Job ID')}</th>
-          <th width="20%">${_('Progress')}</th>
-          <th width="15%">${_('Status')}</th>
-          <th width="15%">${_('Created')}</th>
-          <th width="15%">${_('Last Updated')}</th>
-          <th width="30%">${_('External')}</th>
-        </tr>
-      </thead>
-      <tbody data-bind="foreach: submissions()">
-        <tr>
-          <td data-row-selector-exclude="true"></td>
-          <td><a data-bind="attr: {'href': '#job/edit/' + job()}, text: job"></a></td>
-          <td data-bind="text: progress"></td>
-          <td>
-            <span data-bind="if: status() == 'SUCCEEDED'">${_('Succeeded')}</span>
-            <span data-bind="if: status() == 'FAILURE_ON_SUBMIT'">${_('Failure upon submission')}</span>
-          </td>
-          <td data-bind="text: createdFormatted"></td>
-          <td data-bind="text: updatedFormatted"></td>
-          <td><a data-bind="text: external_id, attr: {'href': external_link}"></a></td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr data-bind="visible: submissions().length == 0">
-          <td colspan="5">
-            <div class="alert">
-                ${_('There are no submissions to display.')}
-            </div>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <div id="server" class="row-fluid mainSection hide"></div>
 </div>
 
 <script type="text/html" id="framework-enum">
@@ -372,7 +314,6 @@ viewModel.isLoading.subscribe(function(value) {
     ko.applyBindings(viewModel, $('#jobs')[0]);
   }
 });
-ko.applyBindings(viewModel, $('#history')[0]);
 
 var tableOptions = {
   "sPaginationType": "bootstrap",
@@ -400,15 +341,9 @@ var tableOptions = {
 };
 
 var jobTable = $('#jobs table').dataTable( tableOptions );
-var historyTable = $('#history table').dataTable( tableOptions );
-
-$(document).on('load.jobs', function() { jobTable.fnDestroy(); });
-$(document).on('loaded.jobs', function() { jobTable = $('#jobs table').dataTable( tableOptions ); });
-$(document).on('load.submissions', function() { historyTable.fnDestroy(); });
-$(document).on('loaded.submissions', function() { historyTable = $('#history table').dataTable( tableOptions ); });
 
 //// Events
-$(document).on('connection_error.sqoop', function(e, name, options, jqXHR) {
+$(document).on('connection_error.jobs', function(e, name, options, jqXHR) {
   $('#sqoop-error .message').text("${ _('Cannot connect to sqoop server.') }");
   routie('error');
 });
@@ -441,13 +376,14 @@ $("#jobs-list tbody").on('click', 'tr', function() {
 });
 
 //// Load all the data
-// TODO: Load at the beginning and with view models.
 var framework = new framework.Framework({modelDict: {}});
-framework.load();
-connectors.fetchConnectors();
-connections.fetchConnections();
+$(document).one('loaded.jobs', function() {
+  framework.load();
+  connectors.fetchConnectors();
+  connections.fetchConnections();
+  submissions.fetchSubmissions();
+});
 jobs.fetchJobs();
-submissions.fetchSubmissions();
 
 
 //// Routes
@@ -456,13 +392,14 @@ $(document).ready(function () {
   routie({
     "error": function() {
       showMainSection("sqoop-error");
+      routie.removeAll();
     },
     "jobs": function() {
       showSection("jobs", "jobs-list");
     },
     "job/edit": function() {
       if (!viewModel.job()) {
-        window.history.back();
+        routie('jobs');
       }
       showSection("jobs", "job-editor");
     },
@@ -476,31 +413,31 @@ $(document).ready(function () {
     },
     "job/save": function() {
       viewModel.saveJob();
-      $(document).one('saved.job', function(){routie('jobs');});
+      $(document).one('saved.job', function(){
+        routie('jobs');
+      });
     },
     "job/run": function() {
       if (viewModel.job()) {
         viewModel.job().start();
-        window.history.back();
-      } else {
-        window.history.back();
       }
+      routie('jobs');
     },
     "job/stop": function() {
       if (viewModel.job()) {
         viewModel.job().stop();
-        window.history.back();
-      } else {
-        window.history.back();
       }
+      routie('jobs');
     },
     "job/copy": function() {
       if (viewModel.job()) {
         viewModel.job().clone();
+        $(document).one('cloned.job', function(){
+          routie('jobs');
+        });
       } else {
         routie('jobs');
       }
-      $(document).one('cloned.job', function(){routie('jobs');});
     },
     "job/delete": function() {
       if (viewModel.job()) {
@@ -518,45 +455,41 @@ $(document).ready(function () {
       showSection("jobs", "connection-editor");
     },
     "connection/edit-cancel": function() {
-      if (viewModel.connection().persisted()) {
+      if (!viewModel.connection().persisted()) {
         viewModel.connections.pop();
       }
-      window.history.back();
-      window.history.back();
+      routie('job/edit');
     },
     "connection/new": function() {
       viewModel.newConnection();
-      showSection("jobs", "connection-editor");
+      routie('connection/edit');
     },
     "connection/save": function() {
       viewModel.saveConnection();
-      window.history.back();
       $(document).one('saved.connection', function(){
-        window.history.back();
+        routie('job/edit');
       });
     },
     "connection/copy": function() {
       if (viewModel.connection()) {
         viewModel.connection().clone();
+        $(document).one('cloned.connection', function(){
+          routie('job/edit');
+        });
       } else {
-        window.history.back();
+        routie('job/edit');
       }
-      $(document).one('cloned.connection', function(){window.history.back();});
     },
     "connection/delete": function() {
       if (viewModel.connection()) {
         viewModel.connection().delete();
+        $(document).one('deleted.connection', function(){
+          routie('job/edit');
+        });
       } else {
-        window.history.back();
+        routie('job/edit');
       }
-      $(document).one('deleted.connection', function(){window.history.back();});
-    },
-    "history": function() {
-      showMainSection("history");
-    },
-    "server": function() {
-      showMainSection("server");
-    },
+    }
   });
 });
 </script>

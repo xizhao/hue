@@ -135,10 +135,10 @@ def connection_clone(request, connection):
   }
 
   connection.id = -1
-  connection.name = '%s-copy' % jconnectionob.name
+  connection.name = '%s-copy' % connection.name
   try:
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
-    response['connection'] = c.create_connection(conn).to_dict()
+    response['connection'] = c.create_connection(connection).to_dict()
   except RestException, e:
     handle_rest_exception(e, _('Could not clone connection.'))
   except SqoopConnectionException, e:
@@ -158,7 +158,7 @@ def connection_delete(request, connection):
 
   try:
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
-    c.delete_connection(conn)
+    c.delete_connection(connection)
   except RestException, e:
     handle_rest_exception(e, _('Could not delete connection.'))
   except SqoopConnectionException, e:

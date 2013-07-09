@@ -80,8 +80,18 @@ var viewModel = new (function() {
   self.connection = ko.observable();
   self.jobs = ko.observableArray();
   self.filter = ko.observable("");
-  self.filteredJobs = ko.computed(function() {
+  self.persistedConnections = ko.computed(function() {
+    return ko.utils.arrayFilter(self.connections(), function (connection) {
+      return connection.persisted();
+    }); 
+  });
+  self.persistedJobs = ko.computed(function() {
     return ko.utils.arrayFilter(self.jobs(), function (job) {
+      return job.persisted();
+    }); 
+  });
+  self.filteredJobs = ko.computed(function() {
+    return ko.utils.arrayFilter(self.persistedJobs(), function (job) {
       if (job.name()) {
         return job.name().toLowerCase().indexOf(self.filter().toLowerCase()) > -1;
       } else {

@@ -44,9 +44,14 @@ function fetcher_error(name, options) {
       case 'text/x-javascript':
       case 'text/x-json':
       var response = $.parseJSON(jqXHR.responseText);
-      if (response.detail == 61) {
-        $(document).trigger('connection_error.sqoop', [jqXHR, name, options])
+      if (response.data.message == 61) {
+        $(document).trigger('connection_error.' + name, [name, options, jqXHR, response])
+      } else {
+        $(document).trigger('error.' + name, [name, options, jqXHR, response])
       }
+      break;
+      default:
+      $(document).trigger('error.' + name, [name, options, jqXHR])
       break;
     }
   };

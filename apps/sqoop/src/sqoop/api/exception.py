@@ -19,13 +19,19 @@ import socket
 
 from django.utils.translation import ugettext as _
 
-from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.exceptions import StructuredException
 from desktop.lib.rest.http_client import RestException
 
 
 def handle_rest_exception(e, msg):
   reason = e.get_parent_ex().reason
   if isinstance(reason, socket.error):
-    raise PopupException(_('Could not connect to sqoop server.'), detail={'message': reason[0], 'code': reason[1]})
+    raise StructuredException(code="BAD_GATEWAY",
+                              message=_('Could not connect to sqoop server.'),
+                              data={'message': reason[0], 'code': reason[1]},
+                              error_code=502)
   else:
-    raise PopupException(msg, detail=e.message)
+    raise StructuredException(code="INTERNAL_SERVER_ERROR",
+                              message=msg,
+                              data=e.message,
+                              error_code=500)
