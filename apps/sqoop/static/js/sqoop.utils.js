@@ -91,7 +91,7 @@ function extract_error_messages(jqXHR, status, error) {
         // if sqoop error response.data should be JSON.
         detail = $.parseJSON(response.data);
         error_response.message = detail.message;
-        error_response.detail = detail.cause.message;
+        error_response.detail = (detail.cause) ? detail.cause.message : '';
         return error_response;
       } catch(ex) {
         // not a sqoop server error response.data is not JSON.

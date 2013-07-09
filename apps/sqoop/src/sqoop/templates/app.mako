@@ -46,11 +46,28 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
         <!-- ko if: filteredJobs().length > 0 -->
         <ul class="major-list" data-bind="foreach: filteredJobs">
           <li data-bind="routie: 'job/edit/' + id()" title="${ _('Click to edit') }">
-            <div class="pull-right">
-              <a data-bind="routie: 'job/copy/' + id(), clickBubble: false"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
-              <a data-bind="routie: 'job/delete/' + id(), clickBubble: false"><i class="icon-remove"></i> ${_('Delete')}</a>
+            <div class="pull-right" style="padding-top: 5px">
+              <!-- ko if: submission() -->
+              <a data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING']) > -1, routie: 'job/stop/' + id()"><i class="icon-stop"></i> ${_('Stop')}</a> &nbsp;
+              <a data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING']) == -1, routie: 'job/run/' + id()"><i class="icon-play"></i> ${_('Run')}</a> &nbsp;
+              <!-- /ko -->
+              <a data-bind="routie: 'job/copy/' + id()"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
+              <a data-bind="routie: 'job/delete/' + id()"><i class="icon-remove"></i> ${_('Delete')}</a>
             </div>
-            <h4><i class="icon-list"></i> <span data-bind="text: name"></span></h4>
+            <h4 style="display: inline-block">
+              <i class="icon-list"></i> <span data-bind="text: name"></span>
+            </h4>
+            <!-- ko if: submission() -->
+            &nbsp;
+            <span class="label label-success" data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING', 'SUCCEEDED']) > -1">
+              <span data-bind="visible: submission().status() != 'SUCCEEDED', text: submission().status"></span>
+              <span data-bind="visible: submission().status() == 'SUCCEEDED', text: submission().createdFormatted"></span>
+            </span>
+            <span class="label label-warning" style="display: inline-block" data-bind="visible: $.inArray(submission().status(), ['FAILURE_ON_SUBMIT', 'FAILED', 'UNKNOWN']) > -1">
+              <span data-bind="visible: submission().status() == 'UNKNOWN', text: submission().status"></span>
+              <span data-bind="visible: submission().status() != 'UNKNOWN', text: submission().createdFormatted"></span>
+            </span>
+            <!-- /ko -->
           </li>
         </ul>
         <!-- /ko -->
@@ -294,11 +311,6 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
 
 <script type="text/javascript" charset="utf-8">
 //// Render all data
-// viewModel.isLoading.subscribe(function(value) {
-//   if (!value) {
-//     ko.applyBindings(viewModel, $('#jobs')[0]);
-//   }
-// });
 ko.applyBindings(viewModel, $('#jobs')[0]);
 
 //// Events
@@ -309,14 +321,13 @@ $(document).on('connection_error.jobs', function(e, name, options, jqXHR) {
 
 $(document).on('start_error.job', function(e, job, options, error) {
   $.jHueNotify.error("${ _('Could not start job: ') }" + error.message);
-  $.jHueNotify.error(error.detail);
 });
 
 $(document).on('start_fail.job', function(e, job, options, message) {
   $.jHueNotify.error("${ _('Could not start job: ') }" + message);
 });
 
-$(document).on('started.job', function(e, submission, model, options) {
+$(document).on('started.job', function(e, job, options, submission_dict) {
   $.jHueNotify.info("${ _('Started job.') }");
 });
 
@@ -326,7 +337,7 @@ $(document).on('save_fail.connection', function(e, job, options, data) {
   });
 });
 
-$('#filter').on('keyup', function() {
+$(document).on('keyup', 'input#filter', function() {
   viewModel.filter($('#filter').val());
 });
 
@@ -383,11 +394,19 @@ $(document).ready(function () {
       }
       routie('jobs');
     },
+    "job/run/:id": function(id) {
+      viewModel.chooseJobById(id);
+      routie('job/run');
+    },
     "job/stop": function() {
       if (viewModel.job()) {
         viewModel.job().stop();
       }
       routie('jobs');
+    },
+    "job/stop/:id": function(id) {
+      viewModel.chooseJobById(id);
+      routie('job/stop');
     },
     "job/copy": function() {
       if (viewModel.job()) {

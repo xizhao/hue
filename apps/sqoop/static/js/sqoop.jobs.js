@@ -17,6 +17,9 @@
 
 
 var jobs = (function($) {
+  var job_registry = {};
+  var running_interval = 0;
+
   var JobModel = koify.Model.extend({
     'id': -1,
     'name': null,
@@ -67,9 +70,32 @@ var jobs = (function($) {
       self.errors = ko.observableArray();
       self.warnings = ko.observableArray();
       self.selected = ko.observable();
+      self.submission = ko.computed({
+        owner: self,
+        read: function () {
+          return submissions.setDefaultSubmission(self.id());
+        },
+        write: function (submission) {
+          submissions.putSubmission(submission);
+          self.id.valueHasMutated();
+
+          if (running_interval == 0 && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) != -1) {
+            running_interval = setInterval(function() {
+              if ($.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) == -1) {
+                clearInterval(running_interval);
+                running_interval = 0;
+              }
+
+              submissions.fetchSubmissions();
+            }, 5000);
+          }
+        }
+      });
       self.persisted = ko.computed(function() {
         return self.id() > -1;
       });
+
+      self.runningInterval = 0;
     },
     'start': function(options) {
       var self = this;
@@ -79,9 +105,8 @@ var jobs = (function($) {
         success: function(data) {
           switch(data.status) {
             case 0:
-              var node = new Submission({modelDict: data.submission});
-              self.submission(node);
-              $(document).trigger('started.job', [node, model, options]);
+              self.submission(new submissions.Submission({modelDict: data.submission}));
+              $(document).trigger('started.job', [self, options, data]);
             break;
             default:
             case 1:
@@ -105,7 +130,8 @@ var jobs = (function($) {
         success: function(data) {
           switch(data.status) {
             case 0:
-              $(document).trigger('started.job', [self, options, data]);
+              self.submission(new submissions.Submission({modelDict: data.submission}));
+              $(document).trigger('started.job', [self, options, data.submission]);
             break;
             default:
             case 1:
@@ -129,7 +155,8 @@ var jobs = (function($) {
         success: function(data) {
           switch(data.status) {
             case 0:
-              $(document).trigger('got_status.job', [self, options, data]);
+              self.submission(new submissions.Submission({modelDict: data.submission}));
+              $(document).trigger('got_status.job', [self, options, data.submission]);
             break;
             default:
             case 1:
@@ -162,9 +189,30 @@ var jobs = (function($) {
     $.ajax(request);
   }
 
+  function put_job(job) {
+    job_registry[job.id()] = job;
+  }
+
+  function get_job(id) {
+    return job_registry[id];
+  }
+
+  function sync_jobs(jobs) {
+    job_registry = {};
+    $.each(jobs, function(index, job) {
+      put_job(job);
+    });
+  }
+
+  $(document).on('loaded.jobs', function(e, nodes, options) {
+    sync_jobs(nodes);
+  });
+
   return {
     'JobModel': JobModel,
     'Job': Job,
-    'fetchJobs': fetch_jobs
+    'fetchJobs': fetch_jobs,
+    'putJob': put_job,
+    'getJob': get_job,
   }
 })($);

@@ -79,6 +79,7 @@ var viewModel = new (function() {
   self.connection = ko.observable();
   self.jobs = ko.observableArray();
   self.filter = ko.observable("");
+  self.isDirty = ko.observable(false);
   // Must always have a value.
   self.connector = ko.computed(function() {
     if (!self.connection()) {
@@ -100,9 +101,10 @@ var viewModel = new (function() {
     }); 
   });
   self.filteredJobs = ko.computed(function() {
+    var filter = self.filter().toLowerCase();
     return ko.utils.arrayFilter(self.persistedJobs(), function (job) {
       if (job.name()) {
-        return job.name().toLowerCase().indexOf(self.filter().toLowerCase()) > -1;
+        return job.name().toLowerCase().indexOf(filter) > -1;
       } else {
         return false;
       }
@@ -122,8 +124,6 @@ var viewModel = new (function() {
   self.allJobsSelected = ko.computed(function () {
     return self.selectedJobs().length > 0 && self.selectedJobs().length == self.jobs().length;
   });
-  self.submissions = ko.observableArray();
-  self.isDirty = ko.observable(false);
   self.isLoading = ko.computed(function() {
     return !self.framework() && self.connectors().length == 0;
   });
@@ -328,16 +328,20 @@ function set_jobs(e, jobs, options) {
   viewModel.jobs(jobs);
 }
 
-function set_submissions(e, submissions, options) {
-  viewModel.submissions.removeAll();
-  viewModel.submissions(submissions);
+function update_job_submissions(e, submissions, options) {
+  $.each(submissions, function(index, submission) {
+    var job = jobs.getJob(submission.job());
+    if (job) {
+      job.submission(submission);
+    }
+  });
 }
 
 $(document).on('loaded.framework', set_framework);
 $(document).on('loaded.connectors', set_connectors);
 $(document).on('loaded.connections', set_connections);
 $(document).on('loaded.jobs', set_jobs);
-$(document).on('loaded.submissions', set_submissions);
+$(document).on('loaded.submissions', update_job_submissions);
 
 $(document).on('saved.connection', function(){ connections.fetchConnections(); });
 $(document).on('saved.job', function() { jobs.fetchJobs(); });

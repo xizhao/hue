@@ -16,10 +16,12 @@
 
 
 var submissions = (function($) {
+  var submission_registry = {};
+
   var SubmissionModel = koify.Model.extend({
     'job': -1,
     'progress': 0.0,
-    'status': 'RUNNING',
+    'status': 'NEVER_EXECUTED',
     'creation_date': null,
     'last_update_date': null,
     'external_id': null,
@@ -78,9 +80,40 @@ var submissions = (function($) {
     $.ajax(request);
   }
 
+  function put_submission(submission) {
+    if (submission_registry[submission.job()]) {
+      if (submission_registry[submission.job()].last_update_date() < submission.last_update_date()) {
+        submission_registry[submission.job()] = submission;
+      }
+    } else {
+      submission_registry[submission.job()] = submission;
+    }
+  }
+
+  function get_submission(job_id) {
+    return submission_registry[job_id];
+  }
+
+  function set_default_submission(job_id) {
+    var submission = get_submission(job_id);
+    if (!submission) {
+      put_submission(new Submission({modelDict: {job: job_id}}));
+    }
+    return get_submission(job_id);
+  }
+
+  $(document).on('loaded.submissions', function(e, nodes, options) {
+    $.each(nodes, function(index, submission) {
+      put_submission(submission);
+    });
+  });
+
   return {
     'SubmissionModel': SubmissionModel,
     'Submission': Submission,
-    'fetchSubmissions': fetch_submissions
+    'fetchSubmissions': fetch_submissions,
+    'putSubmission': put_submission,
+    'getSubmission': get_submission,
+    'setDefaultSubmission': set_default_submission
   }
 })($);
