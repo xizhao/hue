@@ -111,7 +111,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
               </a>
             </li>
             <li data-bind="visible: $root.connections().length > 0">
-              <a href="#connection/edit">
+              <a href="javascript:void(0);" data-bind="routie: 'connection/edit/' + $root.connection().id()">
                 <i class="icon-reorder"></i> ${ _('Edit connection') }
               </a>
             </li>
@@ -165,7 +165,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
       </div>
     </div>
 
-    <div id="connection-editor" class="row-fluid section hide" data-bind="with: connection">
+    <div id="connection-editor" class="row-fluid section hide" data-bind="with: editConnection">
       <div class="well sidebar-nav span2">
         <form id="advanced-settings" method="POST" class="form form-horizontal noPadding">
           <ul class="nav nav-list">

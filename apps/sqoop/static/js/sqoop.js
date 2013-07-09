@@ -76,8 +76,9 @@ var viewModel = new (function() {
   self.framework = ko.observable();
   self.connectors = ko.observableArray();
   self.connections = ko.observableArray();
-  self.connection = ko.observable();
   self.jobs = ko.observableArray();
+  self.connection = ko.observable();
+  self.editConnection = ko.observable();
   self.filter = ko.observable("");
   self.isDirty = ko.observable(false);
   // Must always have a value.
@@ -90,15 +91,15 @@ var viewModel = new (function() {
     });
     return (connectorArr.length > 0) ? connectorArr[0] : self.connectors()[0];
   });
-  self.persistedConnections = ko.computed(function() {
-    return ko.utils.arrayFilter(self.connections(), function (connection) {
-      return connection.persisted();
-    }); 
-  });
   self.persistedJobs = ko.computed(function() {
     return ko.utils.arrayFilter(self.jobs(), function (job) {
       return job.persisted();
     }); 
+  });
+  self.persistedConnections = ko.computed(function() {
+    return ko.utils.arrayFilter(self.connections(), function (connection) {
+      return connection.persisted();
+    });
   });
   self.filteredJobs = ko.computed(function() {
     var filter = self.filter().toLowerCase();
@@ -139,8 +140,8 @@ var viewModel = new (function() {
     // are not going to change so we do not update connection
     // and job objects unless they lack forms.
     if (value) {
-      if (self.connection() && self.connection().framework().length == 0) {
-        self.connection().framework(value.con_forms());
+      if (self.editConnection() && self.editConnection().framework().length == 0) {
+        self.editConnection().framework(value.con_forms());
       }
       if (self.job() && self.job().framework().length == 0) {
         var type = self.job().type().toUpperCase();
@@ -154,8 +155,8 @@ var viewModel = new (function() {
     // are not going to change so we do not update connection
     // and job objects unless they lack forms.
     if (value) {
-      if (self.connection() && self.connection().connector().length == 0) {
-        self.connection().connector(value.con_forms());
+      if (self.editConnection() && self.editConnection().connector().length == 0) {
+        self.editConnection().connector(value.con_forms());
       }
       if (self.job() && self.job().connector().length == 0) {
         var type = self.job().type().toUpperCase();
@@ -215,13 +216,13 @@ var viewModel = new (function() {
     }
   });
 
-  self.connection.subscribe(function() {
-    if (self.connection()) {
-      if (self.connector() && self.connection().connector().length == 0) {
-        self.connection().connector(self.connector().con_forms());
+  self.editConnection.subscribe(function() {
+    if (self.editConnection()) {
+      if (self.connector() && self.editConnection().connector().length == 0) {
+        self.editConnection().connector(self.connector().con_forms());
       }
-      if (self.framework() && !self.connection().framework().length == 0) {
-        self.connection().framework(self.framework().con_forms());
+      if (self.framework() && !self.editConnection().framework().length == 0) {
+        self.editConnection().framework(self.framework().con_forms());
       }
     }
   });
@@ -231,25 +232,29 @@ var viewModel = new (function() {
     var self = this;
     if (!self.connection() || self.connection().persisted()) {
       var conn = create_connection();
-      self.connections.push(conn);
-      self.connection(conn);
+      self.editConnection(conn);
     }
   };
 
   self.saveConnection = function() {
-    var connection = self.connection();
+    var connection = self.editConnection();
     if (connection) {
       connection.connector_id(self.connector().id());
       connection.save();
-      $(document).one('saved.connection', function(){window.history.back();});
     }
   };
 
   self.chooseConnectionById = function(id) {
     $.each(self.connections(), function(index, conn) {
       if (conn.id() == id) {
-        self.connection(conn)
+        self.editConnection(conn);
       }
+    });
+  };
+
+  self.deselectAllConnections = function() {
+    $.each(self.connections(), function(index, value) {
+      value.selected(false);
     });
   };
 
@@ -288,18 +293,19 @@ var viewModel = new (function() {
     } else {
       self.deselectAllJobs();
     }
-  }
+  };
 
   self.selectAllJobs = function() {
     $.each(self.jobs(), function(index, value) {
       value.selected(true);
     });
-  },
+  };
+
   self.deselectAllJobs = function() {
     $.each(self.jobs(), function(index, value) {
       value.selected(false);
     });
-  },
+  };
 
   self.label = function(component, name) {
     var self = this;
