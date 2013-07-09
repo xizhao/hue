@@ -75,11 +75,20 @@ var viewModel = new (function() {
 
   self.framework = ko.observable();
   self.connectors = ko.observableArray();
-  self.connector = ko.observable();
   self.connections = ko.observableArray();
   self.connection = ko.observable();
   self.jobs = ko.observableArray();
   self.filter = ko.observable("");
+  // Must always have a value.
+  self.connector = ko.computed(function() {
+    if (!self.connection()) {
+      return null;
+    }
+    var connectorArr = ko.utils.arrayFilter(self.connectors(), function (connector) {
+      return connector.id() == self.connection().connector();
+    });
+    return (connectorArr.length > 0) ? connectorArr[0] : self.connectors()[0];
+  });
   self.persistedConnections = ko.computed(function() {
     return ko.utils.arrayFilter(self.connections(), function (connection) {
       return connection.persisted();
@@ -267,6 +276,8 @@ var viewModel = new (function() {
     $.each(self.jobs(), function(index, job) {
       if (job.id() == id) {
         job.selected(true);
+      } else {
+        job.selected(false);
       }
     });
   };
@@ -303,9 +314,6 @@ function set_framework(e, framework, options) {
 
 function set_connectors(e, connectors, options) {
   viewModel.connectors(connectors);
-  if (viewModel.connectors().length > 0) {
-    viewModel.connector(viewModel.connectors()[0]);
-  }
 }
 
 function set_connections(e, connections, options) {

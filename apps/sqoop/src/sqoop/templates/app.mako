@@ -20,7 +20,7 @@
 
 <%namespace name="actionbar" file="actionbar.mako" />
 
-${ commonheader(None, "sqoop", user, "100px") | n,unicode }
+${ commonheader(None, "sqoop", user, "60px") | n,unicode }
 
 <div class="container-fluid">
   <div id="sqoop-error" class="row-fluid mainSection hide">
@@ -30,59 +30,41 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
 
   <div id="jobs" class="row-fluid mainSection hide">
     <div id="jobs-list" class="row-fluid section hide">
-      <%actionbar:render>
-        <%def name="search()">
-          <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for job name or content')}">
-        </%def>
+      <div class="row-fluid" data-bind="if: !isLoading()">
+        <%actionbar:render>
+          <%def name="search()">
+            <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for job name or content')}">
+          </%def>
 
-        <%def name="actions()">
-          <a class="btn fileToolbarBtn" title="${_('Run this job')}" href="#job/run"><i class="icon-play"></i> ${_('Run')}</a>
-          <a class="btn fileToolbarBtn" title="${_('Copy this job')}" href="#job/copy"><i class="icon-copy"></i> ${_('Copy')}</a>
-          <a class="btn fileToolbarBtn" title="${_('Delete this job')}" href="#job/delete"><i class="icon-trash"></i> ${_('Delete')}</a>
-        </%def>
+          <%def name="actionbar()"></%def>
 
-        <%def name="creation()">
-          <a class="btn fileToolbarBtn" title="${_('Create a new job')}" href="#job/new"><i class="icon-plus-sign"></i> ${_('New job')}</a>
-        </%def>
-      </%actionbar:render>
-      <table class="table table-striped table-condensed tablescroller-disable row-selectable">
-        <thead>
-          <tr data-bind="visible: filteredJobs().length > 0 && !isLoading()">
-            <th width="1%">
-              <span id="select-all-jobs" data-bind="click: toggleAllJobsSelected, css: {'hueCheckbox': true, 'icon-ok': allJobsSelected}"></span>
-            </th>
-            <th width="5%">${_('ID')}</th>
-            <th width="55%">${_('Name')}</th>
-            <th width="20%">${_('Created')}</th>
-            <th width="20%">${_('Updated')}</th>
-          </tr>
-        </thead>
-        <tbody data-bind="foreach: {data: filteredJobs, afterRender: recreateDatatableAfterJobsRender}">
-          <tr data-bind="">
-            <td data-row-selector-exclude="true">
-              <span data-bind="css: {'hueCheckbox': true, 'center': true, 'icon-ok': selected}">&nbsp;</span>
-            </td>
-            <td data-bind="text: id"></td>
-            <td data-bind="text: name"></td>
-            <td data-bind="text: createdFormatted"></td>
-            <td data-bind="text: updatedFormatted"></td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr data-bind="visible: isLoading">
-            <td colspan="3" class="left">
-              <img src="/static/art/spinner.gif" />
-            </td>
-          </tr>
-          <tr data-bind="visible: jobs().length == 0 && !isLoading()">
-            <td colspan="5">
-              <div class="alert">
-                  ${_('There are no jobs to display.')}
-              </div>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          <%def name="creation()">
+            <a class="btn fileToolbarBtn" title="${_('Create a new job')}" href="#job/new"><i class="icon-plus-sign"></i> ${_('New job')}</a>
+          </%def>
+        </%actionbar:render>
+
+        <!-- ko if: filteredJobs().length > 0 -->
+        <ul class="major-list" data-bind="foreach: filteredJobs">
+          <li data-bind="routie: 'job/edit/' + id()" title="${ _('Click to edit') }">
+            <div class="pull-right">
+              <a data-bind="routie: 'job/copy/' + id(), clickBubble: false"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
+              <a data-bind="routie: 'job/delete/' + id(), clickBubble: false"><i class="icon-remove"></i> ${_('Delete')}</a>
+            </div>
+            <h4><i class="icon-list"></i> <span data-bind="text: name"></span></h4>
+          </li>
+        </ul>
+        <!-- /ko -->
+
+        <div class="span10 offset1 center" data-bind="if: filteredJobs().length == 0">
+          <h1 class="emptyMessage">${ _('There are currently no jobs.') }<br/>${ _('Please click on "New Job" to add one.') }</h1>
+        </div>
+      </div>
+
+      <div class="row-fluid" data-bind="if: isLoading">
+        <div class="span10 offset1 center">
+          <i class="icon-spinner icon-spin" style="font-size: 60px; color: #DDD"></i>
+        </div>
+      </div>
     </div>
 
     <div id="job-editor" class="row-fluid section hide" data-bind="with: job">
@@ -177,7 +159,10 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
                                  'optionsText': function(item) {
                                    return item.name();
                                  },
-                                 'value': $root.connector"
+                                 'optionsValue': function(item) {
+                                   return item.id();
+                                 },
+                                 'value': connector_id"
                       class="span12"></select>
             </li>
             <li>&nbsp;</li>
@@ -309,38 +294,12 @@ ${ commonheader(None, "sqoop", user, "100px") | n,unicode }
 
 <script type="text/javascript" charset="utf-8">
 //// Render all data
-viewModel.isLoading.subscribe(function(value) {
-  if (!value) {
-    ko.applyBindings(viewModel, $('#jobs')[0]);
-  }
-});
-
-var tableOptions = {
-  "sPaginationType": "bootstrap",
-  "bLengthChange": false,
-  "sDom": "<'row'r>t<'row'<'span8'i><''p>>",
-  "bDestroy": true,
-  "bAutoWidth": false,
-  "aoColumnDefs": [
-    { "bSortable": false, "aTargets": [ 0 ] },
-  ],
-  "iDisplayLength" : 25,
-  "oLanguage": {
-    "sEmptyTable":     "${_('No data available')}",
-    "sInfo":           "${_('Showing _START_ to _END_ of _TOTAL_ entries')}",
-    "sInfoEmpty":      "${_('Showing 0 to 0 of 0 entries')}",
-    "sInfoFiltered":   "${_('(filtered from _MAX_ total entries)')}",
-    "sZeroRecords":    "${_('No matching records')}",
-    "oPaginate": {
-      "sFirst":    "${_('First')}",
-      "sLast":     "${_('Last')}",
-      "sNext":     "${_('Next')}",
-      "sPrevious": "${_('Previous')}"
-    }
-  }
-};
-
-var jobTable = $('#jobs table').dataTable( tableOptions );
+// viewModel.isLoading.subscribe(function(value) {
+//   if (!value) {
+//     ko.applyBindings(viewModel, $('#jobs')[0]);
+//   }
+// });
+ko.applyBindings(viewModel, $('#jobs')[0]);
 
 //// Events
 $(document).on('connection_error.jobs', function(e, name, options, jqXHR) {
@@ -348,8 +307,9 @@ $(document).on('connection_error.jobs', function(e, name, options, jqXHR) {
   routie('error');
 });
 
-$(document).on('start_error.job', function(e, job, options, message) {
-  $.jHueNotify.error("${ _('Could not start job: ') }" + response.message);
+$(document).on('start_error.job', function(e, job, options, error) {
+  $.jHueNotify.error("${ _('Could not start job: ') }" + error.message);
+  $.jHueNotify.error(error.detail);
 });
 
 $(document).on('start_fail.job', function(e, job, options, message) {
@@ -405,7 +365,7 @@ $(document).ready(function () {
     },
     "job/edit/:id": function(id) {
       viewModel.chooseJobById(id);
-      showSection("jobs", "job-editor");
+      routie('job/edit');
     },
     "job/new": function() {
       viewModel.newJob();
@@ -439,6 +399,10 @@ $(document).ready(function () {
         routie('jobs');
       }
     },
+    "job/copy/:id": function(id) {
+      viewModel.chooseJobById(id);
+      routie('job/copy');
+    },
     "job/delete": function() {
       if (viewModel.job()) {
         viewModel.job().delete();
@@ -446,6 +410,10 @@ $(document).ready(function () {
         routie('jobs');
       }
       $(document).one('deleted.job', function(){routie('jobs');});
+    },
+    "job/delete/:id": function(id) {
+      viewModel.chooseJobById(id);
+      routie('job/delete');
     },
     "connection/edit": function() {
       showSection("jobs", "connection-editor");

@@ -2,6 +2,24 @@
   cursor: pointer;
 }
 
-.dataTables_wrapper .row {
+ul.major-list {
   margin: 0px;
+  padding: 0px;
+}
+
+ul.major-list li {
+  background: white;
+  cursor: pointer;
+  list-style: none;
+  margin: 3px;
+  padding: 5px;
+}
+
+ul.major-list h4 {
+  margin: 0px;
+  padding: 0px;
+}
+
+#jobs-list li:hover {
+  
 }

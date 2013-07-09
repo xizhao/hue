@@ -86,20 +86,32 @@ function extract_error_messages(jqXHR, status, error) {
   };
   if (jqXHR.responseJSON) {
     var response = jqXHR.responseJSON;
-    if (response.detail) {
+    if (response.data) {
       try {
-        // See if we received an error from sqoop server
-        detail = $.parseJSON(response.detail);
+        // if sqoop error response.data should be JSON.
+        detail = $.parseJSON(response.data);
         error_response.message = detail.message;
-        error_response.detail = detail.cause;
+        error_response.detail = detail.cause.message;
         return error_response;
       } catch(ex) {
-        // not a sqoop server error so it is not JSON.
+        // not a sqoop server error response.data is not JSON.
         error_response.message = response.message;
-        error_response.message = response.detail;
+        error_response.detail = response.data;
+        return error_response;
       }
     }
   }
   error_response.message = jqXHR.responseText;
   return error_response;
 }
+
+//// KO utils
+ko.bindingHandlers.routie = {
+  init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+    $(element).click(function() {
+      var url = ko.utils.unwrapObservable(valueAccessor());
+      routie(url);
+      return false;
+    });
+  }
+};
