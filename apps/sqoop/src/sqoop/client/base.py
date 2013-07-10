@@ -196,9 +196,9 @@ class SqoopClient(object):
       raise SqoopSubmissionException.from_dict(resp_dict['all'][0])
     return Submission.from_dict(resp_dict['all'][0])
 
-  def stop_submission(self, job):
+  def stop_job(self, job):
     resp_dict = self._root.delete('%s/submission/action/%d/' % (API_VERSION, job.id), headers=self.headers)
-    return Submission.from_dict(resp_dict)
+    return Submission.from_dict(resp_dict['all'][0])
 
   def get_submissions(self):
     resp_dict = self._root.get('%s/submission/history/all' % API_VERSION, headers=self.headers)

@@ -22,8 +22,8 @@ var submissions = (function($) {
     'job': -1,
     'progress': 0.0,
     'status': 'NEVER_EXECUTED',
-    'creation_date': null,
-    'last_update_date': null,
+    'creation_date': 0,
+    'last_update_date': 0,
     'external_id': null,
     'external_link': null,
     'initialize': function(attrs) {

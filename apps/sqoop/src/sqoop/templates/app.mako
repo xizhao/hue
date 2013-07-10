@@ -132,9 +132,14 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
               </a>
             </li>
             <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Actions')}</li>
-            <li data-bind="visible: $root.job().persisted">
+            <li data-bind="visible: $root.job().persisted() && !$root.job().isRunning()">
               <a data-placement="right" rel="tooltip" title="${_('Run the job')}" href="#job/save-and-run">
                 <i class="icon-play"></i> ${_('Run')}
+              </a>
+            </li>
+            <li data-bind="visible: $root.job().isRunning()">
+              <a data-placement="right" rel="tooltip" title="${_('Stop the job')}" href="#job/stop">
+                <i class="icon-stop"></i> ${_('Stop')}
               </a>
             </li>
             <li data-bind="visible: $root.job().persisted">
@@ -170,8 +175,8 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
               <div data-bind="template: 'framework-' + type().toLowerCase()"></div>
             </div>
           </fieldset>
+          <a href="#jobs" class="btn">${_('Cancel')}</a>
           <a href="#job/save" class="btn btn-primary">${_('Save')}</a>
-          <a href="#jobs" class="btn btn-danger">${_('Cancel')}</a>
         </form>
       </div>
     </div>
@@ -218,8 +223,8 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
               <div data-bind="template: 'framework-' + type().toLowerCase()"></div>
             </div>
           </fieldset>
+          <a href="#connection/edit-cancel" class="btn">${_('Cancel')}</a>
           <a href="#connection/save" class="btn btn-primary">${_('Save')}</a>
-          <a href="#connection/edit-cancel" class="btn btn-danger">${_('Cancel')}</a>
         </form>
       </div>
     </div>
@@ -369,6 +374,10 @@ $(document).on('start_fail.job', function(e, job, options, message) {
 
 $(document).on('started.job', function(e, job, options, submission_dict) {
   $.jHueNotify.info("${ _('Started job.') }");
+});
+
+$(document).on('stopped.job', function(e, job, options, submission_dict) {
+  $.jHueNotify.info("${ _('Stopped job.') }");
 });
 
 $(document).on('save_fail.connection', function(e, job, options, data) {

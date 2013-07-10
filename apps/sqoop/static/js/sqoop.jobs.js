@@ -76,11 +76,10 @@ var jobs = (function($) {
         },
         write: function (submission) {
           submissions.putSubmission(submission);
-          self.id.valueHasMutated();
 
           if (self.runningInterval == 0 && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) != -1) {
             self.runningInterval = setInterval(function() {
-              if ($.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) == -1) {
+              if (!self.isRunning()) {
                 clearInterval(self.runningInterval);
                 self.runningInterval = 0;
               }
@@ -88,10 +87,15 @@ var jobs = (function($) {
               self.getStatus();
             }, 5000);
           }
+
+          self.id.valueHasMutated();
         }
       });
       self.persisted = ko.computed(function() {
         return self.id() > -1;
+      });
+      self.isRunning = ko.computed(function() {
+        return self.submission() && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) > -1;
       });
 
       self.runningInterval = 0;
@@ -130,7 +134,7 @@ var jobs = (function($) {
           switch(data.status) {
             case 0:
               self.submission(new submissions.Submission({modelDict: data.submission}));
-              $(document).trigger('started.job', [self, options, data.submission]);
+              $(document).trigger('stopped.job', [self, options, data.submission]);
             break;
             default:
             case 1:
