@@ -62,7 +62,7 @@ class Submission(object):
     }
 
     if self.external_id:
-      d['external-id'] = self.external_link
+      d['external-id'] = self.external_id
 
     if self.external_id:
       d['external-link'] = self.external_link

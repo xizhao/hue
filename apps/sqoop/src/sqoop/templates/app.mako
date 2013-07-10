@@ -45,30 +45,41 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
 
         <!-- ko if: filteredJobs().length > 0 -->
         <ul class="major-list" data-bind="foreach: filteredJobs">
+          <!-- ko if: submission() -->
           <li data-bind="routie: 'job/edit/' + id()" title="${ _('Click to edit') }">
             <div class="pull-right" style="padding-top: 5px">
-              <!-- ko if: submission() -->
               <a data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING']) > -1, routie: 'job/stop/' + id()"><i class="icon-stop"></i> ${_('Stop')}</a> &nbsp;
               <a data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING']) == -1, routie: 'job/run/' + id()"><i class="icon-play"></i> ${_('Run')}</a> &nbsp;
-              <!-- /ko -->
+              <a data-bind="routie: 'job/copy/' + id()"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
+              <a data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING']) == -1, routie: 'job/delete/' + id()"><i class="icon-remove"></i> ${_('Delete')}</a>
+            </div>
+            <h4 style="display: inline-block">
+              <i class="icon-list"></i> <span data-bind="text: name"></span>
+            </h4>
+            &nbsp;
+            <span class="label label-success" data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING', 'SUCCEEDED']) > -1">
+              <span data-bind="visible: submission().status() != 'SUCCEEDED', text: submission().status, routie: 'job/status/' + id()"></span>
+              <span data-bind="visible: submission().status() == 'SUCCEEDED', text: submission().createdFormatted, routie: 'job/status/' + id()"></span>
+            </span>
+            <span class="label label-warning" style="display: inline-block" data-bind="visible: $.inArray(submission().status(), ['FAILURE_ON_SUBMIT', 'FAILED', 'UNKNOWN']) > -1">
+              <span data-bind="visible: submission().status() == 'UNKNOWN', text: submission().status"></span>
+              <span data-bind="visible: submission().status() != 'UNKNOWN', text: submission().createdFormatted, routie: 'job/status/' + id()"></span>
+            </span>
+          </li>
+          <!-- /ko -->
+
+          <!-- ko ifnot: submission() -->
+          <li data-bind="routie: 'job/edit/' + id()" title="${ _('Click to edit') }">
+            <div class="pull-right" style="padding-top: 5px">
+              <a data-bind="routie: 'job/run/' + id()"><i class="icon-play"></i> ${_('Run')}</a> &nbsp;
               <a data-bind="routie: 'job/copy/' + id()"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
               <a data-bind="routie: 'job/delete/' + id()"><i class="icon-remove"></i> ${_('Delete')}</a>
             </div>
             <h4 style="display: inline-block">
               <i class="icon-list"></i> <span data-bind="text: name"></span>
             </h4>
-            <!-- ko if: submission() -->
-            &nbsp;
-            <span class="label label-success" data-bind="visible: $.inArray(submission().status(), ['BOOTING', 'RUNNING', 'SUCCEEDED']) > -1">
-              <span data-bind="visible: submission().status() != 'SUCCEEDED', text: submission().status"></span>
-              <span data-bind="visible: submission().status() == 'SUCCEEDED', text: submission().createdFormatted"></span>
-            </span>
-            <span class="label label-warning" style="display: inline-block" data-bind="visible: $.inArray(submission().status(), ['FAILURE_ON_SUBMIT', 'FAILED', 'UNKNOWN']) > -1">
-              <span data-bind="visible: submission().status() == 'UNKNOWN', text: submission().status"></span>
-              <span data-bind="visible: submission().status() != 'UNKNOWN', text: submission().createdFormatted"></span>
-            </span>
-            <!-- /ko -->
           </li>
+          <!-- /ko -->
         </ul>
         <!-- /ko -->
 
@@ -122,7 +133,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
             </li>
             <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Actions')}</li>
             <li data-bind="visible: $root.job().persisted">
-              <a data-placement="right" rel="tooltip" title="${_('Run the job')}" href="#job/run">
+              <a data-placement="right" rel="tooltip" title="${_('Run the job')}" href="#job/save-and-run">
                 <i class="icon-play"></i> ${_('Run')}
               </a>
             </li>
@@ -210,6 +221,35 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
           <a href="#connection/save" class="btn btn-primary">${_('Save')}</a>
           <a href="#connection/edit-cancel" class="btn btn-danger">${_('Cancel')}</a>
         </form>
+      </div>
+    </div>
+
+    <div id="job-status" class="row-fluid section hide" data-bind="with: job">
+      <div class="well sidebar-nav span2">
+        <form id="advanced-settings" method="POST" class="form form-horizontal noPadding">
+          <ul class="nav nav-list">
+            <li>
+              <a rel="tooltip" title="${_('Logs')}" href="javascript:void(0);" target="_new" data-bind="attr: {href: '/jobbrowser/jobs/' + $root.job().submission().external_id()}">
+                <i class="icon-list"></i>
+                ${_('Logs')}
+              </a>
+            </li>
+            <li>
+              <a rel="tooltip" title="${_('Back to editing a job')}" href="#job/edit">
+                <i class="icon-arrow-left"></i>
+                ${_('Back to job')}
+              </a>
+            </li>
+          </ul>
+        </form>
+      </div>
+
+      <div class="span10">
+        <div class="progress center" data-bind="if: submission()">
+          <div class="bar center" data-bind="style: {width: submission().progressFormatted, height: '100%'}, text: submission().progressFormatted">
+            
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -380,7 +420,7 @@ $(document).ready(function () {
     },
     "job/new": function() {
       viewModel.newJob();
-      showSection("jobs", "job-editor");
+      routie('job/edit');
     },
     "job/save": function() {
       viewModel.saveJob();
@@ -398,6 +438,12 @@ $(document).ready(function () {
       viewModel.chooseJobById(id);
       routie('job/run');
     },
+    "job/save-and-run": function() {
+      viewModel.saveJob();
+      $(document).one('saved.job', function(){
+        routie('job/run');
+      });
+    },
     "job/stop": function() {
       if (viewModel.job()) {
         viewModel.job().stop();
@@ -407,6 +453,13 @@ $(document).ready(function () {
     "job/stop/:id": function(id) {
       viewModel.chooseJobById(id);
       routie('job/stop');
+    },
+    "job/status": function() {
+      showSection("jobs", "job-status");
+    },
+    "job/status/:id": function(id) {
+      viewModel.chooseJobById(id);
+      routie('job/status');
     },
     "job/copy": function() {
       if (viewModel.job()) {

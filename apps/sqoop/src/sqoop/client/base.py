@@ -183,12 +183,12 @@ class SqoopClient(object):
     return job
 
   def delete_job(self, job):
-    resp = self._root.delete('%s/job/%d/' % (API_VERSION, job.id), headers=self.headers)
+    resp_dict = self._root.delete('%s/job/%d/' % (API_VERSION, job.id), headers=self.headers)
     return None
 
   def get_job_status(self, job):
     resp_dict = self._root.get('%s/submission/action/%d/' % (API_VERSION, job.id), headers=self.headers)
-    return Submission.from_dict(resp)
+    return Submission.from_dict(resp_dict['all'][0])
 
   def start_job(self, job):
     resp_dict = self._root.post('%s/submission/action/%d/' % (API_VERSION, job.id), headers=self.headers)
@@ -197,7 +197,7 @@ class SqoopClient(object):
     return Submission.from_dict(resp_dict['all'][0])
 
   def stop_submission(self, job):
-    resp = self._root.delete('%s/submission/action/%d/' % (API_VERSION, job.id), headers=self.headers)
+    resp_dict = self._root.delete('%s/submission/action/%d/' % (API_VERSION, job.id), headers=self.headers)
     return Submission.from_dict(resp_dict)
 
   def get_submissions(self):

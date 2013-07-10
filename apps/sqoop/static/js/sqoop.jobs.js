@@ -18,7 +18,6 @@
 
 var jobs = (function($) {
   var job_registry = {};
-  var running_interval = 0;
 
   var JobModel = koify.Model.extend({
     'id': -1,
@@ -79,14 +78,14 @@ var jobs = (function($) {
           submissions.putSubmission(submission);
           self.id.valueHasMutated();
 
-          if (running_interval == 0 && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) != -1) {
-            running_interval = setInterval(function() {
+          if (self.runningInterval == 0 && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) != -1) {
+            self.runningInterval = setInterval(function() {
               if ($.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) == -1) {
-                clearInterval(running_interval);
-                running_interval = 0;
+                clearInterval(self.runningInterval);
+                self.runningInterval = 0;
               }
 
-              submissions.fetchSubmissions();
+              self.getStatus();
             }, 5000);
           }
         }
@@ -151,7 +150,7 @@ var jobs = (function($) {
       var self = this;
       $(document).trigger('get_status.job', [self, options]);
       var options = $.extend({
-        type: 'POST',
+        type: 'GET',
         success: function(data) {
           switch(data.status) {
             case 0:
