@@ -57,6 +57,14 @@ function create_connection(attrs, options) {
   var options = options || {};
   options.modelDict = attrs || {};
   var node = new connections.Connection(options);
+  // Need a copy of the forms so that when editing
+  // we don't re-use forms.
+  $.each(viewModel.connector().con_forms(), function(index, form) {
+    node.connector.push($.extend(true, form, {}));
+  });
+  $.each(viewModel.framework().con_forms(), function(index, form) {
+    node.framework.push($.extend(true, form, {}));
+  });
   return node;
 }
 
@@ -83,6 +91,7 @@ var viewModel = new (function() {
   self.isDirty = ko.observable(false);
   // Must always have a value.
   self.connector = ko.computed(function() {
+    // Fall back to first connector so that a connector is selected when we are creating a connection.
     if (!self.connection()) {
       return self.connectors()[0];
     }
