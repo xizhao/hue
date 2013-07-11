@@ -53,7 +53,7 @@ var koify = (function($, undefined) {
     self.initialize(options);
   }, {
     persist: true,
-    name: undefined,
+    identifier: undefined,
     modelClass: undefined,
 
     initialize: function(options) {
