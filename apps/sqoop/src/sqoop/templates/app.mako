@@ -121,7 +121,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
                 <i class="icon-pencil"></i> ${ _('New connection') }
               </a>
             </li>
-            <li data-bind="visible: $root.connections().length > 0">
+            <li data-bind="if: $root.connections().length > 0, visible: $root.connections().length > 0">
               <a href="javascript:void(0);" data-bind="routie: 'connection/edit/' + $root.connection().id()">
                 <i class="icon-reorder"></i> ${ _('Edit connection') }
               </a>
@@ -162,7 +162,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
           <div class="control-group">
             <label class="control-label">${ _('Name') }</label>
             <div class="controls">
-              <input name="connection-name" data-bind="value: name">
+              <input type="text" name="connection-name" data-bind="value: name">
             </div>
           </div>
           <fieldset data-bind="foreach: connector">
@@ -210,7 +210,7 @@ ${ commonheader(None, "sqoop", user, "60px") | n,unicode }
           <div class="control-group">
             <label class="control-label">${ _('Name') }</label>
             <div class="controls">
-              <input name="connection-name" data-bind="value: name">
+              <input type="text" name="connection-name" data-bind="value: name">
             </div>
           </div>
           <fieldset data-bind="foreach: connector">

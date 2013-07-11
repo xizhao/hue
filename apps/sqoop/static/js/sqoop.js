@@ -84,7 +84,7 @@ var viewModel = new (function() {
   // Must always have a value.
   self.connector = ko.computed(function() {
     if (!self.connection()) {
-      return null;
+      return self.connectors()[0];
     }
     var connectorArr = ko.utils.arrayFilter(self.connectors(), function (connector) {
       return connector.id() == self.connection().connector();
