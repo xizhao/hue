@@ -26,7 +26,7 @@ from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 
 from sqoop import client, conf
-from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.exceptions import StructuredException
 from desktop.lib.rest.http_client import RestException
 from exception import handle_rest_exception
 
@@ -48,7 +48,7 @@ def framework(request):
       c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
       response['framework'] = c.get_framework().to_dict()
     except RestException, e:
-      handle_rest_exception(e, _('Could not get framework.'))
+      response.update(handle_rest_exception(e, _('Could not get framework.')))
     return HttpResponse(json.dumps(response), mimetype="application/json")
   else:
-    raise PopupException(_('GET request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET request required.'), error_code=405)

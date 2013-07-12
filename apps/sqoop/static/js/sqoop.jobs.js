@@ -76,8 +76,7 @@ var jobs = (function($) {
         },
         write: function (submission) {
           submissions.putSubmission(submission);
-
-          if (self.runningInterval == 0 && $.inArray(self.submission().status(), ['BOOTING', 'RUNNING']) != -1) {
+          if (self.runningInterval == 0 && $.inArray(submission.status(), ['BOOTING', 'RUNNING']) != -1) {
             self.runningInterval = setInterval(function() {
               if (!self.isRunning()) {
                 clearInterval(self.runningInterval);
@@ -85,7 +84,7 @@ var jobs = (function($) {
               }
 
               self.getStatus();
-            }, 5000);
+            }, 1000);
           }
 
           self.id.valueHasMutated();
@@ -117,10 +116,6 @@ var jobs = (function($) {
               $(document).trigger('start_fail.job', [self, options, error.exception]);
             break;
           }
-        },
-        error: function(jqXHR, status, error) {
-          var self = this;
-          $(document).trigger('start_error.job', [self, options, extract_error_messages(jqXHR, status, error)]);
         }
       }, options);
       self.request('/sqoop/api/jobs/' + self.id() + '/start', options);
@@ -138,14 +133,10 @@ var jobs = (function($) {
             break;
             default:
             case 1:
-              self.handle_200_messages(self, data);
+              self.handle200Messages(data);
               $(document).trigger('stop_fail.job', [self, options, data]);
             break;
           }
-        },
-        error: function(jqXHR, status, error) {
-          var self = this;
-          $(document).trigger('stop_error.job', [self, options, extract_error_messages(jqXHR, status, error)]);
         }
       }, options);
       self.request('/sqoop/api/jobs/' + self.id() + '/stop', options);
@@ -163,14 +154,10 @@ var jobs = (function($) {
             break;
             default:
             case 1:
-              self.handle_200_messages(self, data);
+              self.handle200Messages(data);
               $(document).trigger('get_status_fail.job', [self, options, data]);
             break;
           }
-        },
-        error: function(jqXHR, status, error) {
-          var self = this;
-          $(document).trigger('get_status_error.job', [self, options, extract_error_messages(jqXHR, status, error)]);
         }
       }, options);
       self.request('/sqoop/api/jobs/' + self.id() + '/status', options);
@@ -186,8 +173,7 @@ var jobs = (function($) {
       url: '/sqoop/api/jobs/',
       dataType: 'json',
       type: 'GET',
-      success: fetcher_success('jobs', Job, options),
-      error: fetcher_error('jobs', options)
+      success: fetcher_success('jobs', Job, options)
     }, options || {});
     $.ajax(request);
   }

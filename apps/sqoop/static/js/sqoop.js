@@ -81,6 +81,7 @@ function create_job(attrs, options) {
 var viewModel = new (function() {
   var self = this;
 
+  self.jobWizard = new wizard.Wizard();
   self.framework = ko.observable();
   self.connectors = ko.observableArray();
   self.connections = ko.observableArray();
@@ -236,7 +237,6 @@ var viewModel = new (function() {
     }
   });
 
-
   self.newConnection = function() {
     var self = this;
     if (!self.connection() || self.connection().persisted()) {
@@ -320,6 +320,11 @@ var viewModel = new (function() {
     var self = this;
     return self[component]().resources[name + '.label'];
   };
+
+  self.help = function(component, name) {
+    var self = this;
+    return self[component]().resources[name + '.help'];
+  }
 })();
 
 //// Event handling

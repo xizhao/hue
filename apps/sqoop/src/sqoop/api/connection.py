@@ -29,7 +29,6 @@ from sqoop import client, conf
 from sqoop.client.connection import SqoopConnectionException
 from decorators import get_connection_or_exception
 from desktop.lib.exceptions import StructuredException
-from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.rest.http_client import RestException
 from exception import handle_rest_exception
 from utils import list_to_dict
@@ -49,10 +48,9 @@ def get_connections(request):
   }
   try:
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
-    connections = c.get_connections()
+    response['connections'] = list_to_dict(c.get_connections())
   except RestException, e:
-    handle_rest_exception(e, _('Could not get connections.'))
-  response['connections'] = list_to_dict(connections)
+    response.update(handle_rest_exception(e, _('Could not get connections.')))
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 def create_connection(request):
@@ -72,9 +70,9 @@ def create_connection(request):
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     response['connection'] = c.create_connection(conn).to_dict()
   except RestException, e:
-    handle_rest_exception(e, _('Could not create connection.'))
+    response.update(handle_rest_exception(e, _('Could not create connection.')))
   except SqoopConnectionException, e:
-    response['status'] = 1
+    response['status'] = 100
     response['errors'] = e.to_dict()
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
@@ -94,9 +92,9 @@ def update_connection(request, connection):
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     response['connection'] = c.update_connection(connection).to_dict()
   except RestException, e:
-    handle_rest_exception(e, _('Could not update connection.'))
+    response.update(handle_rest_exception(e, _('Could not update connection.')))
   except SqoopConnectionException, e:
-    response['status'] = 1
+    response['status'] = 100
     response['errors'] = e.to_dict()
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
@@ -106,7 +104,7 @@ def connections(request):
   elif request.method == 'POST':
     return create_connection(request)
   else:
-    raise PopupException(_('GET or POST request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET or POST request required.'), error_code=405)
 
 @get_connection_or_exception()
 def connection(request, connection):
@@ -121,12 +119,12 @@ def connection(request, connection):
   elif request.method == 'POST':
     return update_connection(request, connection)
   else:
-    raise PopupException(_('GET or POST request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET or POST request required.'), error_code=405)
 
 @get_connection_or_exception()
 def connection_clone(request, connection):
   if request.method != 'POST':
-    raise PopupException(_('POST request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('POST request required.'), error_code=405)
 
   response = {
     'status': 0,
@@ -140,16 +138,16 @@ def connection_clone(request, connection):
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     response['connection'] = c.create_connection(connection).to_dict()
   except RestException, e:
-    handle_rest_exception(e, _('Could not clone connection.'))
+    response.update(handle_rest_exception(e, _('Could not clone connection.')))
   except SqoopConnectionException, e:
-    response['status'] = 1
+    response['status'] = 100
     response['errors'] = e.to_dict()
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 @get_connection_or_exception()
 def connection_delete(request, connection):
   if request.method != 'POST':
-    raise PopupException(_('POST request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('POST request required.'), error_code=405)
 
   response = {
     'status': 0,
@@ -160,8 +158,8 @@ def connection_delete(request, connection):
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     c.delete_connection(connection)
   except RestException, e:
-    handle_rest_exception(e, _('Could not delete connection.'))
+    response.update(handle_rest_exception(e, _('Could not delete connection.')))
   except SqoopConnectionException, e:
-    response['status'] = 1
+    response['status'] = 100
     response['errors'] = e.to_dict()
   return HttpResponse(json.dumps(response), mimetype="application/json")

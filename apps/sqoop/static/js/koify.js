@@ -100,7 +100,7 @@ var koify = (function($, undefined) {
             default:
             case 1:
               self.handle200Messages(data);
-              $(document).trigger('load_error.'  + self.identifier, [self, options, data]);
+              $(document).trigger('load_fail.'  + self.identifier, [self, options, data]);
             break;
           }
         }
@@ -212,6 +212,7 @@ var koify = (function($, undefined) {
 
 
   return {
+    KOClass: KOClass,
     Node: Node,
     Model: Model
   }

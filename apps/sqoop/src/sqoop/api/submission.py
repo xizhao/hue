@@ -27,7 +27,7 @@ from django.utils.translation import ugettext as _
 
 from sqoop import client, conf
 from decorators import get_submission_or_exception
-from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.exceptions import StructuredException
 from desktop.lib.rest.http_client import RestException
 from exception import handle_rest_exception
 from utils import list_to_dict
@@ -49,13 +49,13 @@ def get_submissions(request):
   try:
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     submissions = c.get_submissions()
+    response['submissions'] = list_to_dict(submissions)
   except RestException, e:
-    handle_rest_exception(e, _('Could not get submissions.'))
-  response['submissions'] = list_to_dict(submissions)
+    response.update(handle_rest_exception(e, _('Could not get submissions.')))
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 def submissions(request):
   if request.method == 'GET':
     return get_submissions(request)
   else:
-    raise PopupException(_('GET request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET request required.'), error_code=405)

@@ -15,23 +15,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import socket
 
 from django.utils.translation import ugettext as _
+from django.utils.encoding import smart_str
 
 from desktop.lib.exceptions import StructuredException
 from desktop.lib.rest.http_client import RestException
 
 
+LOG = logging.getLogger(__name__)
+
+
 def handle_rest_exception(e, msg):
   reason = e.get_parent_ex().reason
   if isinstance(reason, socket.error):
-    raise StructuredException(code="BAD_GATEWAY",
-                              message=_('Could not connect to sqoop server.'),
-                              data={'message': reason[0], 'code': reason[1]},
-                              error_code=502)
+    LOG.error(smart_str('Could not connect to sqoop server: %s (%s)' % (reason[0], reason[1])))
+    return {
+      'status': -1,
+      'errors': [_('Could not connect to sqoop server. %s (%s)') % (reason[0], reason[1])]
+    }
   else:
-    raise StructuredException(code="INTERNAL_SERVER_ERROR",
-                              message=msg,
-                              data=e.message,
-                              error_code=500)
+    LOG.error(smart_str(msg))
+    LOG.error(smart_str(e.message))
+    return {
+      'status': 1,
+      'errors': [msg]
+    }

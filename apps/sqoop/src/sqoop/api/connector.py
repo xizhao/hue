@@ -27,7 +27,7 @@ from django.utils.translation import ugettext as _
 
 from sqoop import client, conf
 from decorators import get_connector_or_exception
-from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.exceptions import StructuredException
 from desktop.lib.rest.http_client import RestException
 from exception import handle_rest_exception
 from utils import list_to_dict
@@ -49,14 +49,14 @@ def get_connectors(request):
     c = client.SqoopClient(conf.SERVER_URL.get(), request.user.username, request.LANGUAGE_CODE)
     response['connectors'] = list_to_dict(c.get_connectors())
   except RestException, e:
-    handle_rest_exception(e, _('Could not get connectors.'))
+    response.update(handle_rest_exception(e, _('Could not get connectors.')))
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 def connectors(request):
   if request.method == 'GET':
     return get_connectors(request)
   else:
-    raise PopupException(_('GET request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET request required.'), error_code=405)
 
 @get_connector_or_exception()
 def connector(request, connector):
@@ -69,4 +69,4 @@ def connector(request, connector):
     response['connector'] = connector.to_dict()
     return HttpResponse(json.dumps(response), mimetype="application/json")
   else:
-    raise PopupException(_('GET request required.'), error_code=405)
+    raise StructuredException(code="INVALID_METHOD", message=_('GET request required.'), error_code=405)

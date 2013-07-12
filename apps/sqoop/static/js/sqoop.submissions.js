@@ -77,15 +77,15 @@ var submissions = (function($) {
       url: '/sqoop/api/submissions/',
       dataType: 'json',
       type: 'GET',
-      success: fetcher_success('submissions', Submission, options),
-      error: fetcher_error('submissions', options)
+      success: fetcher_success('submissions', Submission, options)
     }, options || {});
     $.ajax(request);
   }
 
   function put_submission(submission) {
     if (submission_registry[submission.job()]) {
-      if (submission_registry[submission.job()].last_update_date() < submission.last_update_date()) {
+      if (submission_registry[submission.job()].creation_date() < submission.creation_date() || 
+          (submission_registry[submission.job()].creation_date() == submission.creation_date() && submission_registry[submission.job()].last_update_date() < submission.last_update_date())) {
         submission_registry[submission.job()] = submission;
       }
     } else {

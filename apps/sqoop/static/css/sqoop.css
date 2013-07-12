@@ -18,22 +18,3 @@ ul.major-list h4 {
   margin: 5px 0px;
   padding: 0px;
 }
-
-#jobs-list li:hover {
-  
-}
-
-.booting {
-  /*border: 1px solid darkBlue;*/
-  /*background: #01639C;*/
-}
-
-.running {
-  /*border: 1px solid darkBlue;*/
-  /*background: #01639C;*/
-}
-
-.succeeded {
-  /*border: 1px solid darkBlue;*/
-  /*background: #2C7FB3;*/
-}

@@ -19,6 +19,9 @@
 function fetcher_success(name, Node, options) {
   return function(data) {
     switch(data.status) {
+      case -1:
+      $(document).trigger('connection_error.' + name, [options, data])
+      break;
       case 0:
         var nodes = [];
         $.each(data[name], function(index, model_dict) {
@@ -30,28 +33,6 @@ function fetcher_success(name, Node, options) {
       default:
       case 1:
         $(document).trigger('load_error.' + name, [options, data]);
-      break;
-    }
-  };
-}
-
-function fetcher_error(name, options) {
-  return function(jqXHR, status, error) {
-    switch(jqXHR.getResponseHeader('content-type')) {
-      case 'application/json':
-      case 'application/x-javascript':
-      case 'text/javascript':
-      case 'text/x-javascript':
-      case 'text/x-json':
-      var response = $.parseJSON(jqXHR.responseText);
-      if (response.data.message == 61) {
-        $(document).trigger('connection_error.' + name, [name, options, jqXHR, response])
-      } else {
-        $(document).trigger('error.' + name, [name, options, jqXHR, response])
-      }
-      break;
-      default:
-      $(document).trigger('error.' + name, [name, options, jqXHR])
       break;
     }
   };
@@ -76,33 +57,6 @@ function handle_200_messages(node, data) {
       }
     });
   });
-}
-
-function extract_error_messages(jqXHR, status, error) {
-  var error_response = {
-    status_code: jqXHR.status_code,
-    message: null,
-    detail: null
-  };
-  if (jqXHR.responseJSON) {
-    var response = jqXHR.responseJSON;
-    if (response.data) {
-      try {
-        // if sqoop error response.data should be JSON.
-        detail = $.parseJSON(response.data);
-        error_response.message = detail.message;
-        error_response.detail = (detail.cause) ? detail.cause.message : '';
-        return error_response;
-      } catch(ex) {
-        // not a sqoop server error response.data is not JSON.
-        error_response.message = response.message;
-        error_response.detail = response.data;
-        return error_response;
-      }
-    }
-  }
-  error_response.message = jqXHR.responseText;
-  return error_response;
 }
 
 //// KO utils
