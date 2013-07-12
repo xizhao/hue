@@ -528,6 +528,18 @@ $(document).on('save_fail.connection', function(e, node, options, data) {
   });
 });
 
+$(document).on('delete_fail.job', function(e, node, options, data) {
+  $.each(node.errors(), function(index, error) {
+    $.jHueNotify.error(error);
+  });
+});
+
+$(document).on('delete_fail.connection', function(e, node, options, data) {
+  $.each(node.errors(), function(index, error) {
+    $.jHueNotify.error(error);
+  });
+});
+
 $(document).on('keyup', 'input#filter', function() {
   viewModel.filter($('#filter').val());
 });
